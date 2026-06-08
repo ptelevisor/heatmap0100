@@ -1,1 +1,861 @@
-v
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#111418">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Heatmap">
+    <link rel="manifest" href="manifest.json">
+    <title>Heatmap de Notificaciones</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #0a0c10;
+            margin: 0;
+            padding: 12px;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #111418;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            border: 1px solid #2a2f38;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0a0e12 0%, #0f151c 100%);
+            padding: 1rem 1.2rem;
+            color: #eef2ff;
+            border-bottom: 1px solid #2a2f38;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .upload-area {
+            background: #0f1318;
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid #2a2f38;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-label {
+            background: #ef4444;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .file-label:hover {
+            background: #dc2626;
+            transform: scale(1.02);
+        }
+
+        .file-label.hidden {
+            display: none;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .heatmap-wrapper {
+            padding: 1rem 1rem 0.8rem 1rem;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 18px;
+            overflow: hidden;
+            min-width: 600px;
+            background: #0f1318;
+            box-shadow: 0 0 0 1px #2a2f38;
+            font-size: 0.8rem;
+        }
+
+        /* Contenedor de celda para posicionar la línea de tiempo */
+        .time-marker-cell {
+            position: relative;
+            overflow: visible;
+        }
+
+        /* Línea azul parpadeante - SOLO VISUAL */
+        .time-marker {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+            box-shadow: 0 0 8px #3b82f6, 0 0 4px #60a5fa;
+            animation: blinkPulse 0.8s ease-in-out infinite;
+            z-index: 999;
+            pointer-events: none;
+            border-radius: 3px;
+        }
+
+        /* Marcador decorativo circular */
+        .time-marker::before {
+            content: "●";
+            position: absolute;
+            left: -8px;
+            top: -6px;
+            font-size: 12px;
+            color: #3b82f6;
+            text-shadow: 0 0 6px #3b82f6;
+            animation: blinkPulse 0.8s ease-in-out infinite;
+        }
+
+        /* Marcador del lado derecho */
+        .time-marker::after {
+            content: "●";
+            position: absolute;
+            right: -8px;
+            top: -6px;
+            font-size: 12px;
+            color: #3b82f6;
+            text-shadow: 0 0 6px #3b82f6;
+            animation: blinkPulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes blinkPulse {
+            0%, 100% {
+                opacity: 0.5;
+                box-shadow: 0 0 2px #3b82f6;
+            }
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 12px #3b82f6, 0 0 6px #60a5fa;
+            }
+        }
+
+        /* El valor numérico se mantiene siempre visible */
+        .cell-value {
+            font-weight: 700;
+            line-height: 1.2;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Estilos base para móvil vertical */
+        @media (max-width: 640px) {
+            .heatmap-table th,
+            .heatmap-table td {
+                padding: 8px 4px !important;
+            }
+
+            .cell-value {
+                font-size: 1rem !important;
+            }
+
+            .heatmap-table td:first-child {
+                font-size: 0.7rem !important;
+                padding-left: 8px !important;
+            }
+
+            .heatmap-table th {
+                font-size: 0.75rem !important;
+                padding: 10px 4px !important;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .file-label {
+                padding: 6px 14px;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Estilos para tablet y escritorio */
+        @media (min-width: 641px) {
+            .heatmap-table th,
+            .heatmap-table td {
+                padding: 12px 8px;
+            }
+
+            .cell-value {
+                font-size: 1.2rem;
+            }
+
+            .heatmap-table td:first-child {
+                font-size: 0.85rem;
+                padding-left: 16px;
+            }
+        }
+
+        /* Optimización para rotación horizontal en móvil */
+        @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                padding: 6px;
+            }
+            
+            .dashboard {
+                border-radius: 16px;
+            }
+            
+            .header {
+                padding: 0.5rem 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1rem;
+                margin: 0;
+            }
+            
+            .upload-area {
+                padding: 0.5rem 1rem;
+            }
+            
+            .heatmap-wrapper {
+                padding: 0.5rem;
+                max-height: 75vh;
+                overflow-y: auto;
+            }
+            
+            .heatmap-table th,
+            .heatmap-table td {
+                padding: 4px 2px !important;
+            }
+            
+            .cell-value {
+                font-size: 0.7rem !important;
+            }
+            
+            .heatmap-table td:first-child {
+                font-size: 0.55rem !important;
+                padding-left: 4px !important;
+            }
+            
+            .heatmap-table th {
+                font-size: 0.6rem !important;
+                padding: 6px 2px !important;
+            }
+            
+            .file-label {
+                padding: 4px 10px;
+                font-size: 0.65rem;
+            }
+        }
+
+        .heatmap-table th {
+            background: #1a212c;
+            font-weight: 700;
+            color: #facc15;
+            border-bottom: 2px solid #ef4444;
+            border-right: 1px solid #2a2f38;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .heatmap-table td {
+            border: 1px solid #2a2f38;
+            text-align: center;
+            transition: all 0.12s linear;
+            cursor: pointer;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .heatmap-table td:hover {
+            transform: scale(1.02);
+            filter: brightness(0.92) saturate(1.1);
+            z-index: 3;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+        }
+
+        td[data-tooltip] {
+            position: relative;
+        }
+
+        td[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000000dd;
+            backdrop-filter: blur(8px);
+            color: #fff5e6;
+            font-size: 0.65rem;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid #ef4444;
+        }
+
+        /* Escala de calor */
+        .heat-0 {
+            background-color: #ffffff;
+            color: #1f2937;
+        }
+        .heat-1 {
+            background-color: #fee2e2;
+            color: #1f2937;
+        }
+        .heat-2 {
+            background-color: #fecaca;
+            color: #1f2937;
+        }
+        .heat-3 {
+            background-color: #fca5a5;
+            color: #1f2937;
+        }
+        .heat-4 {
+            background-color: #f87171;
+            color: #1f2937;
+        }
+        .heat-5 {
+            background-color: #ef4444;
+            color: white;
+            text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+        }
+        .heat-6 {
+            background-color: #dc2626;
+            color: white;
+        }
+        .heat-7 {
+            background-color: #b91c1c;
+            color: white;
+        }
+        .heat-8 {
+            background-color: #991b1b;
+            color: white;
+        }
+        .heat-9 {
+            background-color: #7f1d1d;
+            color: white;
+        }
+        .heat-10 {
+            background-color: #450a0a;
+            color: white;
+        }
+
+        .heatmap-table td:first-child {
+            background: #1a212c;
+            font-weight: 600;
+            text-align: left;
+            color: #facc15;
+            border-right: 1px solid #ef4444;
+            white-space: nowrap;
+        }
+
+        .no-data-msg {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #9ca3af;
+            font-style: italic;
+            background: #0f1318;
+            border-radius: 24px;
+            font-size: 0.85rem;
+        }
+
+        .error-message {
+            background: #7f1d1d;
+            color: #fee2e2;
+            padding: 10px 16px;
+            border-radius: 14px;
+            margin: 12px 16px;
+            font-size: 0.8rem;
+            border-left: 4px solid #ef4444;
+        }
+
+        .heatmap-wrapper::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .heatmap-wrapper::-webkit-scrollbar-track {
+            background: #1e2430;
+            border-radius: 10px;
+        }
+
+        .heatmap-wrapper::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .upload-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .file-label {
+                justify-content: center;
+            }
+        }
+
+        /* Modo oscuro optimizado para OLED */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #0a0c10;
+            }
+        }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🔥 Heatmap de Notificaciones</h1>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <label class="file-label" id="uploadBtn">
+                📂 Subir Excel
+                <input type="file" id="excelInput" accept=".xlsx, .xls, .xlsm">
+            </label>
+        </div>
+
+        <div id="errorContainer" style="display: none;"></div>
+
+        <div class="heatmap-wrapper" id="heatmapWrapper">
+            <div id="heatmapRoot">
+                <div class="no-data-msg">🌑 Sube tu archivo con columnas: <strong>diaSemana,
+                        horaNotificacion</strong><br>📱 Vista optimizada para móvil y escritorio</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawRegistros = [];
+        let rangosDinamicos = [];
+
+        const daysOrder = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+        const daysSpanish = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+        function normalizarDia(diaRaw) {
+            if (!diaRaw) return null;
+            let dia = diaRaw.toString().trim().toLowerCase();
+            dia = dia.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (dia === "lunes") return "lunes";
+            if (dia === "martes") return "martes";
+            if (dia === "miercoles") return "miércoles";
+            if (dia === "jueves") return "jueves";
+            if (dia === "viernes") return "viernes";
+            if (dia === "sabado") return "sábado";
+            if (dia === "domingo") return "domingo";
+            return null;
+        }
+
+        function horaADecimal(horaRaw) {
+            if (!horaRaw) return null;
+            let horaStr = horaRaw.toString().trim();
+            if (horaStr.toLowerCase() === "sin notificacion" || horaStr === "no aplica") return null;
+            if (horaStr.includes(":")) {
+                const partes = horaStr.split(":");
+                let horas = parseInt(partes[0], 10);
+                let minutos = parseInt(partes[1], 10);
+                if (isNaN(horas)) return null;
+                if (isNaN(minutos)) minutos = 0;
+                return horas + (minutos / 60);
+            }
+            let num = parseFloat(horaStr);
+            if (!isNaN(num) && num >= 0 && num <= 1) return num * 24;
+            if (/^\d{3,4}$/.test(horaStr)) {
+                let horas = parseInt(horaStr.substring(0, 2), 10);
+                let minutos = parseInt(horaStr.substring(2, 4), 10);
+                if (!isNaN(horas) && !isNaN(minutos) && horas < 24 && minutos < 60) return horas + (minutos / 60);
+            }
+            return null;
+        }
+
+        function formatearHora(horaDecimal) {
+            const hora = Math.floor(horaDecimal);
+            const minutos = Math.round((horaDecimal - hora) * 60);
+            return `${hora.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+        }
+
+        function generarRangosDinamicos(horasUnicas) {
+            if (horasUnicas.length === 0) return [];
+            horasUnicas.sort((a, b) => a - b);
+            let grupos = [];
+            let grupoActual = [horasUnicas[0]];
+            for (let i = 1; i < horasUnicas.length; i++) {
+                if (horasUnicas[i] - horasUnicas[i - 1] <= 1.5) grupoActual.push(horasUnicas[i]);
+                else { grupos.push([...grupoActual]); grupoActual = [horasUnicas[i]]; }
+            }
+            grupos.push([...grupoActual]);
+
+            let fusionado = [];
+            for (let i = 0; i < grupos.length; i++) {
+                if (grupos[i].length === 1 && fusionado.length > 0) {
+                    fusionado[fusionado.length - 1] = [...fusionado[fusionado.length - 1], ...grupos[i]];
+                } else if (grupos[i].length === 1 && i < grupos.length - 1) {
+                    grupos[i + 1] = [...grupos[i], ...grupos[i + 1]];
+                } else {
+                    fusionado.push([...grupos[i]]);
+                }
+            }
+            let finalGrupos = [];
+            for (let i = 0; i < fusionado.length; i++) {
+                if (fusionado[i].length === 1 && finalGrupos.length > 0) finalGrupos[finalGrupos.length - 1] = [...finalGrupos[finalGrupos.length - 1], ...fusionado[i]];
+                else finalGrupos.push([...fusionado[i]]);
+            }
+            return finalGrupos.map(g => ({
+                min: Math.min(...g) - 0.01,
+                max: Math.max(...g) + 0.01,
+                label: `${formatearHora(Math.min(...g))} - ${formatearHora(Math.max(...g))}`,
+                horas: [...g]
+            }));
+        }
+
+        function obtenerRangoIndex(horaDecimal, rangos) {
+            for (let i = 0; i < rangos.length; i++) {
+                if (horaDecimal >= rangos[i].min && horaDecimal <= rangos[i].max) return i;
+            }
+            return null;
+        }
+
+        function procesarExcel(data) {
+            const registros = [];
+            const sheetName = data.SheetNames[0];
+            const worksheet = data.Sheets[sheetName];
+            const filas = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+            if (!filas || filas.length < 2) throw new Error("El archivo está vacío o no tiene datos.");
+
+            let col = { diaSemana: -1, horaNotificacion: -1 };
+
+            for (let r = 0; r < Math.min(5, filas.length); r++) {
+                const row = filas[r];
+                if (!row) continue;
+                for (let c = 0; c < row.length; c++) {
+                    const val = row[c] ? row[c].toString().toLowerCase().trim() : "";
+                    if ((val === "diasemana" || val === "dia semana" || val === "diaSemana") && col.diaSemana === -1) col.diaSemana = c;
+                    if ((val === "horanotificacion" || val === "hora notificacion" || val === "horaNotificacion") && col.horaNotificacion === -1) col.horaNotificacion = c;
+                }
+                if (col.diaSemana !== -1 && col.horaNotificacion !== -1) break;
+            }
+
+            if (col.diaSemana === -1 || col.horaNotificacion === -1) {
+                for (let r = 1; r < Math.min(30, filas.length); r++) {
+                    const row = filas[r];
+                    if (!row) continue;
+                    for (let c = 0; c < row.length; c++) {
+                        const val = row[c] ? row[c].toString() : "";
+                        const posibleDia = normalizarDia(val);
+                        if (posibleDia && col.diaSemana === -1 && daysOrder.includes(posibleDia)) col.diaSemana = c;
+                        const horaDec = horaADecimal(val);
+                        if (horaDec !== null && col.horaNotificacion === -1) col.horaNotificacion = c;
+                    }
+                    if (col.diaSemana !== -1 && col.horaNotificacion !== -1) break;
+                }
+            }
+
+            if (col.diaSemana === -1) throw new Error("No se encontró columna 'diaSemana'");
+            if (col.horaNotificacion === -1) throw new Error("No se encontró columna 'horaNotificacion'");
+
+            let inicioDatos = 0;
+            for (let i = 0; i < filas.length; i++) {
+                const f = filas[i];
+                if (f && f[col.diaSemana] && normalizarDia(f[col.diaSemana]) && daysOrder.includes(normalizarDia(f[col.diaSemana]))) {
+                    inicioDatos = i;
+                    break;
+                }
+            }
+
+            const horasRaw = [];
+            for (let i = inicioDatos; i < filas.length; i++) {
+                const row = filas[i];
+                if (!row || row.length === 0) continue;
+                let diaRaw = col.diaSemana < row.length ? row[col.diaSemana] : null;
+                let horaRaw = col.horaNotificacion < row.length ? row[col.horaNotificacion] : null;
+
+                if (diaRaw && typeof diaRaw === 'object' && diaRaw.t) diaRaw = diaRaw.t;
+                if (horaRaw && typeof horaRaw === 'object' && horaRaw.t) horaRaw = horaRaw.t;
+
+                const dia = normalizarDia(diaRaw);
+                if (!dia) continue;
+                const horaDec = horaADecimal(horaRaw);
+                if (horaDec === null) continue;
+
+                registros.push({ dia, horaDecimal: horaDec });
+                horasRaw.push(horaDec);
+            }
+            if (registros.length === 0) throw new Error("No hay registros válidos");
+            const horasUnicas = [...new Set(horasRaw)];
+            const rangos = generarRangosDinamicos(horasUnicas);
+            return { registros, rangos };
+        }
+
+        function getCurrentDay() {
+            const now = new Date();
+            const dayIndex = now.getDay();
+            return daysSpanish[dayIndex];
+        }
+
+        function getCurrentHourDecimal() {
+            const now = new Date();
+            return now.getHours() + (now.getMinutes() / 60);
+        }
+
+        function getCurrentDayColumnIndex() {
+            const currentDay = getCurrentDay();
+            return daysOrder.findIndex(d => d === currentDay);
+        }
+
+        function getMarkerPosition(cellElement, rangoMin, rangoMax, currentHour) {
+            if (currentHour < rangoMin || currentHour > rangoMax) return null;
+
+            const cellRect = cellElement.getBoundingClientRect();
+            const cellHeight = cellRect.height;
+
+            const percent = (currentHour - rangoMin) / (rangoMax - rangoMin);
+            const positionY = percent * cellHeight;
+
+            return positionY;
+        }
+
+        function applyTimeMarkers() {
+            // Limpiar marcadores existentes
+            document.querySelectorAll('.time-marker').forEach(marker => marker.remove());
+            document.querySelectorAll('.time-marker-cell').forEach(cell => {
+                cell.classList.remove('time-marker-cell');
+                cell.style.position = '';
+            });
+
+            if (!rangosDinamicos.length) return;
+
+            const currentDayCol = getCurrentDayColumnIndex();
+            if (currentDayCol === -1) return;
+
+            const currentHour = getCurrentHourDecimal();
+
+            const table = document.querySelector('.heatmap-table');
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tbody tr');
+
+            rows.forEach((row, rowIndex) => {
+                if (rowIndex >= rangosDinamicos.length) return;
+
+                const rango = rangosDinamicos[rowIndex];
+                if (currentHour >= rango.min && currentHour <= rango.max) {
+                    const cells = row.querySelectorAll('td');
+                    if (cells[currentDayCol + 1]) {
+                        const targetCell = cells[currentDayCol + 1];
+                        
+                        // Asegurar que la celda tenga position relative
+                        const computedStyle = window.getComputedStyle(targetCell);
+                        if (computedStyle.position !== 'relative') {
+                            targetCell.style.position = 'relative';
+                        }
+                        
+                        const positionY = getMarkerPosition(targetCell, rango.min, rango.max, currentHour);
+
+                        if (positionY !== null && positionY >= 0 && positionY <= targetCell.clientHeight) {
+                            const marker = document.createElement('div');
+                            marker.className = 'time-marker';
+                            marker.style.top = `${positionY}px`;
+                            marker.style.position = 'absolute';
+                            marker.style.left = '0';
+                            marker.style.right = '0';
+                            marker.style.height = '3px';
+
+                            targetCell.classList.add('time-marker-cell');
+                            
+                            // Remover marcador existente en esta celda
+                            const existingMarker = targetCell.querySelector('.time-marker');
+                            if (existingMarker) existingMarker.remove();
+                            
+                            targetCell.appendChild(marker);
+                        }
+                    }
+                }
+            });
+        }
+
+        function ocultarBotonUpload() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadArea = document.getElementById('uploadArea');
+            if (uploadBtn) {
+                uploadBtn.classList.add('hidden');
+            }
+            if (uploadArea) {
+                uploadArea.style.display = 'none';
+            }
+        }
+
+        function renderizarHeatmap() {
+            const conRango = rawRegistros.map(r => {
+                const idx = obtenerRangoIndex(r.horaDecimal, rangosDinamicos);
+                return idx !== null ? { ...r, rangoIdx: idx } : null;
+            }).filter(r => r);
+
+            const matriz = {};
+            for (let i = 0; i < rangosDinamicos.length; i++) {
+                matriz[i] = {};
+                for (let d of daysOrder) matriz[i][d] = 0;
+            }
+            let total = 0;
+            conRango.forEach(r => { matriz[r.rangoIdx][r.dia]++; total++; });
+
+            let maxFreq = 0;
+            for (let i = 0; i < rangosDinamicos.length; i++)
+                for (let d of daysOrder) maxFreq = Math.max(maxFreq, matriz[i][d]);
+            maxFreq = Math.max(maxFreq, 1);
+
+            const container = document.getElementById("heatmapRoot");
+            if (!container) return;
+            if (total === 0) {
+                container.innerHTML = `<div class="no-data-msg">🔍 No se encontraron notificaciones válidas</div>`;
+                return;
+            }
+
+            let html = `<table class="heatmap-table"><thead>`;
+            html += `<tr><th>✅ ${total}</th>`;
+            for (let d of daysOrder) {
+                let display = d.charAt(0).toUpperCase() + d.slice(1);
+                html += `<th>${display}</th>`;
+            }
+            html += `</thead><tbody>`;
+
+            for (let r = 0; r < rangosDinamicos.length; r++) {
+                const rango = rangosDinamicos[r];
+                html += `<tr>`;
+                html += `<td style="background:#1a212c; font-weight:600; text-align:left; padding-left:16px; color:#facc15; white-space: nowrap;">🕐 ${rango.label}</td>`;
+                for (let d of daysOrder) {
+                    const freq = matriz[r][d];
+                    const intensidad = Math.min(10, Math.floor((freq / maxFreq) * 10));
+                    const tooltipText = `${rango.label} · ${d.charAt(0).toUpperCase() + d.slice(1)}: ${freq} notif.`;
+                    html += `<td class="heat-${intensidad}" data-tooltip="${tooltipText.replace(/"/g, '&quot;')}"><div class="cell-value">${freq}</div></td>`;
+                }
+                html += `</tr>`;
+            }
+            html += `</tbody>${'竞争'}`;
+
+            container.innerHTML = html;
+
+            // Forzar un reflow para asegurar que los elementos estén renderizados
+            setTimeout(() => {
+                applyTimeMarkers();
+            }, 100);
+        }
+
+        function mostrarError(msg) {
+            const errDiv = document.getElementById("errorContainer");
+            if (errDiv) {
+                errDiv.style.display = "block";
+                errDiv.innerHTML = `<div class="error-message">⚠️ ${msg}</div>`;
+            }
+        }
+
+        function limpiarError() {
+            const e = document.getElementById("errorContainer");
+            if (e) e.style.display = "none";
+        }
+
+        document.getElementById("excelInput").addEventListener("change", function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            limpiarError();
+            
+            // Ocultar el botón de upload inmediatamente
+            ocultarBotonUpload();
+            
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const { registros, rangos } = procesarExcel(wb);
+                    rawRegistros = registros;
+                    rangosDinamicos = rangos;
+                    renderizarHeatmap();
+                } catch (err) {
+                    mostrarError(err.message);
+                    // Si hay error, mostrar el botón nuevamente
+                    const uploadBtn = document.getElementById('uploadBtn');
+                    const uploadArea = document.getElementById('uploadArea');
+                    if (uploadBtn) {
+                        uploadBtn.classList.remove('hidden');
+                    }
+                    if (uploadArea) {
+                        uploadArea.style.display = 'flex';
+                    }
+                }
+            };
+            reader.onerror = () => mostrarError("No se pudo leer el archivo");
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ Service Worker registrado:', reg))
+                    .catch(err => console.log('❌ Error al registrar SW:', err));
+            });
+        }
+
+        window.onload = () => {
+            document.getElementById("heatmapRoot").innerHTML = `<div class="no-data-msg">🌑 Sube tu archivo Excel<br>📌 Columnas: <strong>diaSemana, horaNotificacion</strong><br>📱 Vista optimizada para móvil y escritorio</div>`;
+            
+            // Actualizar marcadores cada segundo
+            setInterval(() => {
+                if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
+                    applyTimeMarkers();
+                }
+            }, 1000);
+        };
+
+        // También actualizar al hacer scroll o redimensionar
+        window.addEventListener('scroll', () => {
+            if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
+                applyTimeMarkers();
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
+                setTimeout(() => applyTimeMarkers(), 100);
+            }
+        });
+    </script>
+</body>
+
+</html>
