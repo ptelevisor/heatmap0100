@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 
-    
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
@@ -95,7 +94,7 @@
 
         .heatmap-wrapper {
             padding: 0.8rem;
-            overflow-x: visible;
+            overflow-x: auto;
             overflow-y: visible;
         }
 
@@ -106,7 +105,7 @@
             overflow: hidden;
             background: #0f1318;
             box-shadow: 0 0 0 1px #2a2f38;
-            table-layout: fixed;
+            min-width: 800px;
         }
 
         /* Contenedor de celda para posicionar la línea de tiempo */
@@ -169,18 +168,16 @@
             z-index: 10;
         }
 
-        /* Estilo para la primera columna (rango de horas) - SIN EMOJI, CENTRADO */
+        /* Estilo para la primera columna (días) */
         .heatmap-table td:first-child {
             background: #1a212c;
             font-weight: 600;
             text-align: center;
             color: #facc15;
             border-right: 1px solid #ef4444;
-            white-space: normal;
-            word-break: break-word;
-            line-height: 1.3;
-            font-size: 0.7rem;
-            padding: 8px 4px;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            padding: 8px 12px;
         }
 
         /* ========== ESTILOS MÓVIL VERTICAL ========== */
@@ -216,12 +213,12 @@
             
             .heatmap-table th,
             .heatmap-table td {
-                padding: 6px 2px;
+                padding: 6px 4px;
             }
             
             .heatmap-table th {
-                font-size: 0.65rem;
-                padding: 8px 2px;
+                font-size: 0.7rem;
+                padding: 8px 4px;
             }
             
             .heatmap-table td {
@@ -229,13 +226,12 @@
             }
             
             .cell-value {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
             
             .heatmap-table td:first-child {
-                font-size: 0.55rem;
-                padding: 6px 2px;
-                line-height: 1.2;
+                font-size: 0.65rem;
+                padding: 6px 8px;
             }
         }
 
@@ -274,26 +270,25 @@
             
             .heatmap-table th,
             .heatmap-table td {
-                padding: 10px 4px;
+                padding: 8px 6px;
             }
             
             .heatmap-table th {
-                font-size: 0.9rem;
-                padding: 8px 4px;
+                font-size: 0.85rem;
+                padding: 8px 6px;
             }
             
             .heatmap-table td {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
             }
             
             .cell-value {
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
             
             .heatmap-table td:first-child {
                 font-size: 0.7rem;
-                padding: 8px 4px;
-                line-height: 1.3;
+                padding: 8px 10px;
             }
         }
 
@@ -304,12 +299,12 @@
             }
             
             .dashboard {
-                max-width: 1200px;
+                max-width: 1400px;
             }
             
             .heatmap-table th,
             .heatmap-table td {
-                padding: 12px 8px;
+                padding: 12px 10px;
             }
             
             .cell-value {
@@ -317,8 +312,8 @@
             }
             
             .heatmap-table td:first-child {
-                font-size: 0.8rem;
-                padding: 12px 8px;
+                font-size: 0.85rem;
+                padding: 12px 16px;
             }
         }
 
@@ -407,8 +402,8 @@
         }
 
         .heatmap-wrapper::-webkit-scrollbar {
-            height: 3px;
-            width: 3px;
+            height: 5px;
+            width: 5px;
         }
 
         .heatmap-wrapper::-webkit-scrollbar-track {
@@ -454,8 +449,9 @@
 
     <script>
         let rawRegistros = [];
-        let rangosDinamicos = [];
-
+        // Estructura: rangosPorDia[dia] = array de rangos para ese día
+        let rangosPorDia = {};
+        
         const daysOrder = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
         const daysSpanish = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -501,7 +497,8 @@
             return `${hora.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
         }
 
-        function generarRangosDinamicos(horasUnicas) {
+        // Genera rangos para un día específico basado en sus horas únicas
+        function generarRangosPorDia(horasUnicas) {
             if (horasUnicas.length === 0) return [];
             horasUnicas.sort((a, b) => a - b);
             let grupos = [];
@@ -589,7 +586,12 @@
                 }
             }
 
-            const horasRaw = [];
+            // Agrupar registros por día
+            const registrosPorDia = {};
+            for (let d of daysOrder) {
+                registrosPorDia[d] = [];
+            }
+
             for (let i = inicioDatos; i < filas.length; i++) {
                 const row = filas[i];
                 if (!row || row.length === 0) continue;
@@ -604,13 +606,24 @@
                 const horaDec = horaADecimal(horaRaw);
                 if (horaDec === null) continue;
 
+                registrosPorDia[dia].push(horaDec);
                 registros.push({ dia, horaDecimal: horaDec });
-                horasRaw.push(horaDec);
             }
+            
             if (registros.length === 0) throw new Error("No hay registros válidos");
-            const horasUnicas = [...new Set(horasRaw)];
-            const rangos = generarRangosDinamicos(horasUnicas);
-            return { registros, rangos };
+            
+            // Generar rangos independientes para cada día
+            const rangosPorDiaTemp = {};
+            for (let d of daysOrder) {
+                if (registrosPorDia[d].length > 0) {
+                    const horasUnicas = [...new Set(registrosPorDia[d])];
+                    rangosPorDiaTemp[d] = generarRangosPorDia(horasUnicas);
+                } else {
+                    rangosPorDiaTemp[d] = [];
+                }
+            }
+            
+            return { registros, rangosPorDia: rangosPorDiaTemp };
         }
 
         function getCurrentDay() {
@@ -644,38 +657,51 @@
                 cell.style.position = '';
             });
 
-            if (!rangosDinamicos.length) return;
+            const currentDay = getCurrentDay();
             const currentDayCol = getCurrentDayColumnIndex();
             if (currentDayCol === -1) return;
+            
             const currentHour = getCurrentHourDecimal();
+            const rangosDelDia = rangosPorDia[currentDay];
+            if (!rangosDelDia || rangosDelDia.length === 0) return;
+
             const table = document.querySelector('.heatmap-table');
             if (!table) return;
-            const rows = table.querySelectorAll('tbody tr');
 
-            rows.forEach((row, rowIndex) => {
-                if (rowIndex >= rangosDinamicos.length) return;
-                const rango = rangosDinamicos[rowIndex];
-                if (currentHour >= rango.min && currentHour <= rango.max) {
-                    const cells = row.querySelectorAll('td');
-                    if (cells[currentDayCol + 1]) {
-                        const targetCell = cells[currentDayCol + 1];
-                        const computedStyle = window.getComputedStyle(targetCell);
-                        if (computedStyle.position !== 'relative') {
-                            targetCell.style.position = 'relative';
-                        }
-                        const positionY = getMarkerPosition(targetCell, rango.min, rango.max, currentHour);
-                        if (positionY !== null && positionY >= 0 && positionY <= targetCell.clientHeight) {
-                            const marker = document.createElement('div');
-                            marker.className = 'time-marker';
-                            marker.style.top = `${positionY}px`;
-                            targetCell.classList.add('time-marker-cell');
-                            const existingMarker = targetCell.querySelector('.time-marker');
-                            if (existingMarker) existingMarker.remove();
-                            targetCell.appendChild(marker);
-                        }
+            // Encontrar la fila (rango) que corresponde a la hora actual para el día actual
+            let rangoIndex = -1;
+            for (let i = 0; i < rangosDelDia.length; i++) {
+                if (currentHour >= rangosDelDia[i].min && currentHour <= rangosDelDia[i].max) {
+                    rangoIndex = i;
+                    break;
+                }
+            }
+            
+            if (rangoIndex === -1) return;
+
+            const rows = table.querySelectorAll('tbody tr');
+            if (rangoIndex < rows.length) {
+                const row = rows[rangoIndex];
+                const cells = row.querySelectorAll('td');
+                if (cells[currentDayCol + 1]) {
+                    const targetCell = cells[currentDayCol + 1];
+                    const rango = rangosDelDia[rangoIndex];
+                    const computedStyle = window.getComputedStyle(targetCell);
+                    if (computedStyle.position !== 'relative') {
+                        targetCell.style.position = 'relative';
+                    }
+                    const positionY = getMarkerPosition(targetCell, rango.min, rango.max, currentHour);
+                    if (positionY !== null && positionY >= 0 && positionY <= targetCell.clientHeight) {
+                        const marker = document.createElement('div');
+                        marker.className = 'time-marker';
+                        marker.style.top = `${positionY}px`;
+                        targetCell.classList.add('time-marker-cell');
+                        const existingMarker = targetCell.querySelector('.time-marker');
+                        if (existingMarker) existingMarker.remove();
+                        targetCell.appendChild(marker);
                     }
                 }
-            });
+            }
         }
 
         function ocultarBotonUpload() {
@@ -686,54 +712,101 @@
         }
 
         function renderizarHeatmap() {
-            const conRango = rawRegistros.map(r => {
-                const idx = obtenerRangoIndex(r.horaDecimal, rangosDinamicos);
-                return idx !== null ? { ...r, rangoIdx: idx } : null;
-            }).filter(r => r);
-
-            const matriz = {};
-            for (let i = 0; i < rangosDinamicos.length; i++) {
-                matriz[i] = {};
-                for (let d of daysOrder) matriz[i][d] = 0;
+            // Construir matriz de frecuencias POR DÍA
+            // Necesitamos una estructura: matriz[dia][rangoIndex] = frecuencia
+            const matrizFrecuencias = {};
+            const rangosLabels = {};
+            
+            for (let d of daysOrder) {
+                matrizFrecuencias[d] = {};
+                rangosLabels[d] = rangosPorDia[d] || [];
+                for (let i = 0; i < rangosLabels[d].length; i++) {
+                    matrizFrecuencias[d][i] = 0;
+                }
             }
-            let total = 0;
-            conRango.forEach(r => { matriz[r.rangoIdx][r.dia]++; total++; });
-
-            let maxFreq = 0;
-            for (let i = 0; i < rangosDinamicos.length; i++)
-                for (let d of daysOrder) maxFreq = Math.max(maxFreq, matriz[i][d]);
-            maxFreq = Math.max(maxFreq, 1);
-
-            const container = document.getElementById("heatmapRoot");
-            if (!container) return;
-            if (total === 0) {
-                container.innerHTML = `<div class="no-data-msg">🔍 No se encontraron notificaciones válidas</div>`;
+            
+            // Llenar frecuencias
+            for (let registro of rawRegistros) {
+                const dia = registro.dia;
+                const rangosDelDia = rangosPorDia[dia];
+                if (rangosDelDia && rangosDelDia.length > 0) {
+                    const rangoIdx = obtenerRangoIndex(registro.horaDecimal, rangosDelDia);
+                    if (rangoIdx !== null) {
+                        matrizFrecuencias[dia][rangoIdx] = (matrizFrecuencias[dia][rangoIdx] || 0) + 1;
+                    }
+                }
+            }
+            
+            // Encontrar el máximo de frecuencias por día para la escala de colores
+            let maxFreqGlobal = 0;
+            for (let d of daysOrder) {
+                const freqs = Object.values(matrizFrecuencias[d]);
+                const maxPorDia = Math.max(...freqs, 0);
+                maxFreqGlobal = Math.max(maxFreqGlobal, maxPorDia);
+            }
+            maxFreqGlobal = Math.max(maxFreqGlobal, 1);
+            
+            // Determinar el número máximo de filas (rangos) que tiene cualquier día
+            let maxRows = 0;
+            for (let d of daysOrder) {
+                maxRows = Math.max(maxRows, rangosPorDia[d]?.length || 0);
+            }
+            
+            if (maxRows === 0) {
+                document.getElementById("heatmapRoot").innerHTML = `<div class="no-data-msg">🔍 No hay datos para mostrar</div>`;
                 return;
             }
-
-            let html = `<table class="heatmap-table"><thead>`;
-            html += `<tr><th>✅ ${total}</th>`;
+            
+            const totalRegistros = rawRegistros.length;
+            
+            let html = `<div style="overflow-x: auto;"><table class="heatmap-table"><thead>`;
+            html += `<tr><th>📊 Día / Rango</th>`;
             for (let d of daysOrder) {
                 let display = d.charAt(0).toUpperCase() + d.slice(1);
                 html += `<th>${display}</th>`;
             }
-            html += `</thead><tbody>`;
-
-            for (let r = 0; r < rangosDinamicos.length; r++) {
-                const rango = rangosDinamicos[r];
+            html += `</tr></thead><tbody>`;
+            
+            // Para cada fila (índice de rango)
+            for (let rowIdx = 0; rowIdx < maxRows; rowIdx++) {
                 html += `<tr>`;
-                // Primera columna SIN EMOJI, solo el texto del rango de horas
-                html += `<td style="background:#1a212c; font-weight:600; text-align:center; color:#facc15;">${rango.label}</td>`;
+                // Primera columna: mostrar el label del rango del primer día que tenga este índice
+                // (se asume que los rangos pueden ser diferentes por día, mostramos el del lunes o el primero disponible)
+                let labelMostrado = "";
                 for (let d of daysOrder) {
-                    const freq = matriz[r][d];
-                    const intensidad = Math.min(10, Math.floor((freq / maxFreq) * 10));
-                    const tooltipText = `${rango.label} · ${d.charAt(0).toUpperCase() + d.slice(1)}: ${freq} notif.`;
-                    html += `<td class="heat-${intensidad}" data-tooltip="${tooltipText.replace(/"/g, '&quot;')}"><div class="cell-value">${freq}</div></td>`;
+                    if (rangosPorDia[d] && rangosPorDia[d][rowIdx]) {
+                        labelMostrado = rangosPorDia[d][rowIdx].label;
+                        break;
+                    }
+                }
+                if (!labelMostrado) labelMostrado = "—";
+                html += `<td style="background:#1a212c; font-weight:600; text-align:center; color:#facc15;">${labelMostrado}</td>`;
+                
+                // Para cada día, mostrar la frecuencia en su rango correspondiente
+                for (let d of daysOrder) {
+                    let freq = 0;
+                    let intensidad = 0;
+                    let tooltipText = "";
+                    
+                    if (rangosPorDia[d] && rangosPorDia[d][rowIdx]) {
+                        freq = matrizFrecuencias[d][rowIdx] || 0;
+                        intensidad = Math.min(10, Math.floor((freq / maxFreqGlobal) * 10));
+                        tooltipText = `${rangosPorDia[d][rowIdx].label} · ${d}: ${freq} notif.`;
+                    } else {
+                        tooltipText = `${d}: sin datos en este rango`;
+                    }
+                    
+                    html += `<td class="heat-${intensidad}" data-tooltip="${tooltipText.replace(/"/g, '&quot;')}">
+                                <div class="cell-value">${freq}</div>
+                             </td>`;
                 }
                 html += `</tr>`;
             }
-            html += `</tbody>${'竞争'}`;
-            container.innerHTML = html;
+            
+            html += `</tbody></table></div>`;
+            html += `<div style="text-align: center; margin-top: 10px; font-size: 0.7rem; color: #9ca3af;">✅ Total registros: ${totalRegistros}</div>`;
+            
+            document.getElementById("heatmapRoot").innerHTML = html;
             setTimeout(() => { applyTimeMarkers(); }, 100);
         }
 
@@ -760,9 +833,9 @@
                 try {
                     const data = new Uint8Array(evt.target.result);
                     const wb = XLSX.read(data, { type: 'array' });
-                    const { registros, rangos } = procesarExcel(wb);
+                    const { registros, rangosPorDia: rangos } = procesarExcel(wb);
                     rawRegistros = registros;
-                    rangosDinamicos = rangos;
+                    rangosPorDia = rangos;
                     renderizarHeatmap();
                 } catch (err) {
                     mostrarError(err.message);
@@ -787,14 +860,14 @@
         window.onload = () => {
             document.getElementById("heatmapRoot").innerHTML = `<div class="no-data-msg">🌑 Sube tu archivo Excel<br>📌 Columnas: <strong>diaSemana, horaNotificacion</strong><br>📱 Vista optimizada</div>`;
             setInterval(() => {
-                if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
+                if (rawRegistros.length > 0 && Object.keys(rangosPorDia).length > 0) {
                     applyTimeMarkers();
                 }
             }, 1000);
         };
 
         window.addEventListener('resize', () => {
-            if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
+            if (rawRegistros.length > 0 && Object.keys(rangosPorDia).length > 0) {
                 setTimeout(() => applyTimeMarkers(), 100);
             }
         });
