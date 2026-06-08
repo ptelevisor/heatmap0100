@@ -19,15 +19,19 @@
         body {
             background: #0a0c10;
             margin: 0;
-            padding: 12px;
+            padding: 8px;
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .dashboard {
-            max-width: 1400px;
+            width: 100%;
+            max-width: 100%;
             margin: 0 auto;
             background: #111418;
-            border-radius: 28px;
+            border-radius: 20px;
             box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.6);
             overflow: hidden;
             border: 1px solid #2a2f38;
@@ -35,43 +39,43 @@
 
         .header {
             background: linear-gradient(135deg, #0a0e12 0%, #0f151c 100%);
-            padding: 1rem 1.2rem;
+            padding: 0.8rem 1rem;
             color: #eef2ff;
             border-bottom: 1px solid #2a2f38;
+            text-align: center;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             flex-wrap: wrap;
         }
 
         .upload-area {
             background: #0f1318;
-            padding: 0.9rem 1.2rem;
+            padding: 0.8rem;
             border-bottom: 1px solid #2a2f38;
             display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 12px;
+            justify-content: center;
         }
 
         .file-label {
             background: #ef4444;
             color: white;
-            padding: 8px 18px;
+            padding: 10px 20px;
             border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: 0.2s;
             border: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             white-space: nowrap;
         }
 
@@ -89,22 +93,19 @@
         }
 
         .heatmap-wrapper {
-            padding: 1rem 1rem 0.8rem 1rem;
-            overflow-x: auto;
+            padding: 0.8rem;
+            overflow-x: visible;
             overflow-y: visible;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
         }
 
         .heatmap-table {
             width: 100%;
             border-collapse: collapse;
-            border-radius: 18px;
+            border-radius: 12px;
             overflow: hidden;
-            min-width: 600px;
             background: #0f1318;
             box-shadow: 0 0 0 1px #2a2f38;
-            font-size: 0.8rem;
+            table-layout: fixed;
         }
 
         /* Contenedor de celda para posicionar la línea de tiempo */
@@ -113,7 +114,7 @@
             overflow: visible;
         }
 
-        /* Línea azul parpadeante - SOLO VISUAL */
+        /* Línea azul parpadeante */
         .time-marker {
             position: absolute;
             left: 0;
@@ -127,7 +128,6 @@
             border-radius: 3px;
         }
 
-        /* Marcador decorativo circular */
         .time-marker::before {
             content: "●";
             position: absolute;
@@ -139,7 +139,6 @@
             animation: blinkPulse 0.8s ease-in-out infinite;
         }
 
-        /* Marcador del lado derecho */
         .time-marker::after {
             content: "●";
             position: absolute;
@@ -162,7 +161,6 @@
             }
         }
 
-        /* El valor numérico se mantiene siempre visible */
         .cell-value {
             font-weight: 700;
             line-height: 1.2;
@@ -170,56 +168,8 @@
             z-index: 10;
         }
 
-        /* Estilos base para móvil vertical */
-        @media (max-width: 640px) {
-            .heatmap-table th,
-            .heatmap-table td {
-                padding: 8px 4px !important;
-            }
-
-            .cell-value {
-                font-size: 1rem !important;
-            }
-
-            .heatmap-table td:first-child {
-                font-size: 0.7rem !important;
-                padding-left: 8px !important;
-            }
-
-            .heatmap-table th {
-                font-size: 0.75rem !important;
-                padding: 10px 4px !important;
-            }
-
-            .header h1 {
-                font-size: 1.2rem;
-            }
-
-            .file-label {
-                padding: 6px 14px;
-                font-size: 0.75rem;
-            }
-        }
-
-        /* Estilos para tablet y escritorio */
-        @media (min-width: 641px) {
-            .heatmap-table th,
-            .heatmap-table td {
-                padding: 12px 8px;
-            }
-
-            .cell-value {
-                font-size: 1.2rem;
-            }
-
-            .heatmap-table td:first-child {
-                font-size: 0.85rem;
-                padding-left: 16px;
-            }
-        }
-
-        /* Optimización para rotación horizontal en móvil */
-        @media (orientation: landscape) and (max-height: 600px) {
+        /* ========== ESTILOS MÓVIL VERTICAL ========== */
+        @media (max-width: 768px) and (orientation: portrait) {
             body {
                 padding: 6px;
             }
@@ -229,46 +179,129 @@
             }
             
             .header {
-                padding: 0.5rem 1rem;
+                padding: 0.6rem 0.8rem;
             }
             
             .header h1 {
                 font-size: 1rem;
-                margin: 0;
             }
             
             .upload-area {
-                padding: 0.5rem 1rem;
+                padding: 0.6rem;
+            }
+            
+            .file-label {
+                padding: 8px 16px;
+                font-size: 0.85rem;
             }
             
             .heatmap-wrapper {
-                padding: 0.5rem;
-                max-height: 75vh;
+                padding: 0.6rem;
+            }
+            
+            .heatmap-table th,
+            .heatmap-table td {
+                padding: 6px 2px;
+            }
+            
+            .heatmap-table th {
+                font-size: 0.65rem;
+                padding: 8px 2px;
+            }
+            
+            .heatmap-table td {
+                font-size: 0.7rem;
+            }
+            
+            .cell-value {
+                font-size: 0.85rem;
+            }
+            
+            .heatmap-table td:first-child {
+                font-size: 0.6rem;
+                padding-left: 4px;
+            }
+        }
+
+        /* ========== ESTILOS MÓVIL HORIZONTAL ========== */
+        @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                padding: 4px;
+            }
+            
+            .dashboard {
+                border-radius: 12px;
+            }
+            
+            .header {
+                padding: 0.4rem 0.8rem;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .upload-area {
+                padding: 0.4rem;
+            }
+            
+            .file-label {
+                padding: 6px 14px;
+                font-size: 0.9rem;
+            }
+            
+            .heatmap-wrapper {
+                padding: 0.4rem;
+                max-height: 85vh;
                 overflow-y: auto;
             }
             
             .heatmap-table th,
             .heatmap-table td {
-                padding: 4px 2px !important;
-            }
-            
-            .cell-value {
-                font-size: 0.7rem !important;
-            }
-            
-            .heatmap-table td:first-child {
-                font-size: 0.55rem !important;
-                padding-left: 4px !important;
+                padding: 10px 4px;
             }
             
             .heatmap-table th {
-                font-size: 0.6rem !important;
-                padding: 6px 2px !important;
+                font-size: 0.9rem;
+                padding: 8px 4px;
             }
             
-            .file-label {
-                padding: 4px 10px;
-                font-size: 0.65rem;
+            .heatmap-table td {
+                font-size: 0.9rem;
+            }
+            
+            .cell-value {
+                font-size: 1.1rem;
+            }
+            
+            .heatmap-table td:first-child {
+                font-size: 0.75rem;
+                padding-left: 8px;
+            }
+        }
+
+        /* ========== TABLET Y ESCRITORIO ========== */
+        @media (min-width: 769px) {
+            body {
+                padding: 16px;
+            }
+            
+            .dashboard {
+                max-width: 1200px;
+            }
+            
+            .heatmap-table th,
+            .heatmap-table td {
+                padding: 12px 8px;
+            }
+            
+            .cell-value {
+                font-size: 1.2rem;
+            }
+            
+            .heatmap-table td:first-child {
+                font-size: 0.85rem;
+                padding-left: 16px;
             }
         }
 
@@ -324,51 +357,17 @@
         }
 
         /* Escala de calor */
-        .heat-0 {
-            background-color: #ffffff;
-            color: #1f2937;
-        }
-        .heat-1 {
-            background-color: #fee2e2;
-            color: #1f2937;
-        }
-        .heat-2 {
-            background-color: #fecaca;
-            color: #1f2937;
-        }
-        .heat-3 {
-            background-color: #fca5a5;
-            color: #1f2937;
-        }
-        .heat-4 {
-            background-color: #f87171;
-            color: #1f2937;
-        }
-        .heat-5 {
-            background-color: #ef4444;
-            color: white;
-            text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
-        }
-        .heat-6 {
-            background-color: #dc2626;
-            color: white;
-        }
-        .heat-7 {
-            background-color: #b91c1c;
-            color: white;
-        }
-        .heat-8 {
-            background-color: #991b1b;
-            color: white;
-        }
-        .heat-9 {
-            background-color: #7f1d1d;
-            color: white;
-        }
-        .heat-10 {
-            background-color: #450a0a;
-            color: white;
-        }
+        .heat-0 { background-color: #ffffff; color: #1f2937; }
+        .heat-1 { background-color: #fee2e2; color: #1f2937; }
+        .heat-2 { background-color: #fecaca; color: #1f2937; }
+        .heat-3 { background-color: #fca5a5; color: #1f2937; }
+        .heat-4 { background-color: #f87171; color: #1f2937; }
+        .heat-5 { background-color: #ef4444; color: white; text-shadow: 0 0 1px rgba(0, 0, 0, 0.2); }
+        .heat-6 { background-color: #dc2626; color: white; }
+        .heat-7 { background-color: #b91c1c; color: white; }
+        .heat-8 { background-color: #991b1b; color: white; }
+        .heat-9 { background-color: #7f1d1d; color: white; }
+        .heat-10 { background-color: #450a0a; color: white; }
 
         .heatmap-table td:first-child {
             background: #1a212c;
@@ -385,7 +384,7 @@
             color: #9ca3af;
             font-style: italic;
             background: #0f1318;
-            border-radius: 24px;
+            border-radius: 20px;
             font-size: 0.85rem;
         }
 
@@ -400,7 +399,8 @@
         }
 
         .heatmap-wrapper::-webkit-scrollbar {
-            height: 5px;
+            height: 3px;
+            width: 3px;
         }
 
         .heatmap-wrapper::-webkit-scrollbar-track {
@@ -415,23 +415,7 @@
 
         @media (max-width: 480px) {
             body {
-                padding: 8px;
-            }
-
-            .upload-area {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .file-label {
-                justify-content: center;
-            }
-        }
-
-        /* Modo oscuro optimizado para OLED */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: #0a0c10;
+                padding: 4px;
             }
         }
     </style>
@@ -455,8 +439,7 @@
 
         <div class="heatmap-wrapper" id="heatmapWrapper">
             <div id="heatmapRoot">
-                <div class="no-data-msg">🌑 Sube tu archivo con columnas: <strong>diaSemana,
-                        horaNotificacion</strong><br>📱 Vista optimizada para móvil y escritorio</div>
+                <div class="no-data-msg">🌑 Sube tu archivo con columnas:<br><strong>diaSemana, horaNotificacion</strong><br>📱 Vista optimizada</div>
             </div>
         </div>
     </div>
@@ -640,18 +623,13 @@
 
         function getMarkerPosition(cellElement, rangoMin, rangoMax, currentHour) {
             if (currentHour < rangoMin || currentHour > rangoMax) return null;
-
             const cellRect = cellElement.getBoundingClientRect();
             const cellHeight = cellRect.height;
-
             const percent = (currentHour - rangoMin) / (rangoMax - rangoMin);
-            const positionY = percent * cellHeight;
-
-            return positionY;
+            return percent * cellHeight;
         }
 
         function applyTimeMarkers() {
-            // Limpiar marcadores existentes
             document.querySelectorAll('.time-marker').forEach(marker => marker.remove());
             document.querySelectorAll('.time-marker-cell').forEach(cell => {
                 cell.classList.remove('time-marker-cell');
@@ -659,49 +637,32 @@
             });
 
             if (!rangosDinamicos.length) return;
-
             const currentDayCol = getCurrentDayColumnIndex();
             if (currentDayCol === -1) return;
-
             const currentHour = getCurrentHourDecimal();
-
             const table = document.querySelector('.heatmap-table');
             if (!table) return;
-
             const rows = table.querySelectorAll('tbody tr');
 
             rows.forEach((row, rowIndex) => {
                 if (rowIndex >= rangosDinamicos.length) return;
-
                 const rango = rangosDinamicos[rowIndex];
                 if (currentHour >= rango.min && currentHour <= rango.max) {
                     const cells = row.querySelectorAll('td');
                     if (cells[currentDayCol + 1]) {
                         const targetCell = cells[currentDayCol + 1];
-                        
-                        // Asegurar que la celda tenga position relative
                         const computedStyle = window.getComputedStyle(targetCell);
                         if (computedStyle.position !== 'relative') {
                             targetCell.style.position = 'relative';
                         }
-                        
                         const positionY = getMarkerPosition(targetCell, rango.min, rango.max, currentHour);
-
                         if (positionY !== null && positionY >= 0 && positionY <= targetCell.clientHeight) {
                             const marker = document.createElement('div');
                             marker.className = 'time-marker';
                             marker.style.top = `${positionY}px`;
-                            marker.style.position = 'absolute';
-                            marker.style.left = '0';
-                            marker.style.right = '0';
-                            marker.style.height = '3px';
-
                             targetCell.classList.add('time-marker-cell');
-                            
-                            // Remover marcador existente en esta celda
                             const existingMarker = targetCell.querySelector('.time-marker');
                             if (existingMarker) existingMarker.remove();
-                            
                             targetCell.appendChild(marker);
                         }
                     }
@@ -712,12 +673,8 @@
         function ocultarBotonUpload() {
             const uploadBtn = document.getElementById('uploadBtn');
             const uploadArea = document.getElementById('uploadArea');
-            if (uploadBtn) {
-                uploadBtn.classList.add('hidden');
-            }
-            if (uploadArea) {
-                uploadArea.style.display = 'none';
-            }
+            if (uploadBtn) uploadBtn.classList.add('hidden');
+            if (uploadArea) uploadArea.style.display = 'none';
         }
 
         function renderizarHeatmap() {
@@ -757,7 +714,7 @@
             for (let r = 0; r < rangosDinamicos.length; r++) {
                 const rango = rangosDinamicos[r];
                 html += `<tr>`;
-                html += `<td style="background:#1a212c; font-weight:600; text-align:left; padding-left:16px; color:#facc15; white-space: nowrap;">🕐 ${rango.label}</td>`;
+                html += `<td style="background:#1a212c; font-weight:600; text-align:left; padding-left:8px; color:#facc15; white-space: nowrap;">🕐 ${rango.label}</td>`;
                 for (let d of daysOrder) {
                     const freq = matriz[r][d];
                     const intensidad = Math.min(10, Math.floor((freq / maxFreq) * 10));
@@ -767,13 +724,8 @@
                 html += `</tr>`;
             }
             html += `</tbody>${'竞争'}`;
-
             container.innerHTML = html;
-
-            // Forzar un reflow para asegurar que los elementos estén renderizados
-            setTimeout(() => {
-                applyTimeMarkers();
-            }, 100);
+            setTimeout(() => { applyTimeMarkers(); }, 100);
         }
 
         function mostrarError(msg) {
@@ -793,10 +745,7 @@
             const file = e.target.files[0];
             if (!file) return;
             limpiarError();
-            
-            // Ocultar el botón de upload inmediatamente
             ocultarBotonUpload();
-            
             const reader = new FileReader();
             reader.onload = function (evt) {
                 try {
@@ -808,34 +757,26 @@
                     renderizarHeatmap();
                 } catch (err) {
                     mostrarError(err.message);
-                    // Si hay error, mostrar el botón nuevamente
                     const uploadBtn = document.getElementById('uploadBtn');
                     const uploadArea = document.getElementById('uploadArea');
-                    if (uploadBtn) {
-                        uploadBtn.classList.remove('hidden');
-                    }
-                    if (uploadArea) {
-                        uploadArea.style.display = 'flex';
-                    }
+                    if (uploadBtn) uploadBtn.classList.remove('hidden');
+                    if (uploadArea) uploadArea.style.display = 'flex';
                 }
             };
             reader.onerror = () => mostrarError("No se pudo leer el archivo");
             reader.readAsArrayBuffer(file);
         });
 
-        // Registrar Service Worker para PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('✅ Service Worker registrado:', reg))
-                    .catch(err => console.log('❌ Error al registrar SW:', err));
+                    .then(reg => console.log('✅ SW registrado:', reg))
+                    .catch(err => console.log('❌ Error SW:', err));
             });
         }
 
         window.onload = () => {
-            document.getElementById("heatmapRoot").innerHTML = `<div class="no-data-msg">🌑 Sube tu archivo Excel<br>📌 Columnas: <strong>diaSemana, horaNotificacion</strong><br>📱 Vista optimizada para móvil y escritorio</div>`;
-            
-            // Actualizar marcadores cada segundo
+            document.getElementById("heatmapRoot").innerHTML = `<div class="no-data-msg">🌑 Sube tu archivo Excel<br>📌 Columnas: <strong>diaSemana, horaNotificacion</strong><br>📱 Vista optimizada</div>`;
             setInterval(() => {
                 if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
                     applyTimeMarkers();
@@ -843,13 +784,6 @@
             }, 1000);
         };
 
-        // También actualizar al hacer scroll o redimensionar
-        window.addEventListener('scroll', () => {
-            if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
-                applyTimeMarkers();
-            }
-        });
-        
         window.addEventListener('resize', () => {
             if (rawRegistros.length > 0 && rangosDinamicos.length > 0) {
                 setTimeout(() => applyTimeMarkers(), 100);
